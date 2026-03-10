@@ -1,0 +1,12 @@
+{
+  "name": "chartiq-backend",
+  "version": "1.0.0",
+  "description": "ChartIQ — AI Crypto Chart Analysis",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "stripe": "^14.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
