@@ -1,0 +1,11 @@
+{
+  "name": "chartiq",
+  "version": "1.0.0",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "stripe": "^14.0.0"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
