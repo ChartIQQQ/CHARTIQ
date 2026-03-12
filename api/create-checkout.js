@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{
-        price: 'price_1T9rh5HA43bWUD6azTPNY18O',
+        price: 'price_1T9rReQaDogZz0VrxjRHbFAr',
         quantity: 1,
       }],
       success_url: 'https://chartiq-drab.vercel.app/?session_id={CHECKOUT_SESSION_ID}',
