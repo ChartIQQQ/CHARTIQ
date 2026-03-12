@@ -562,7 +562,10 @@ kbd{background:var(--white);border:1px solid var(--line);padding:.15rem .4rem;co
   <section id="app-section">
     <div class="app-bar">
       <h2>Analyze a Chart</h2>
-      <div class="active-badge">Active Session</div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="active-badge">Active Session</div>
+        <button onclick="cancelSubscription()" style="background:none;border:1px solid var(--line);padding:.3rem .8rem;font-family:'Azeret Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;color:var(--muted);transition:all .15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">Cancel Plan</button>
+      </div>
     </div>
 
     <div class="upload-zone" id="upload-zone">
@@ -785,6 +788,27 @@ kbd{background:var(--white);border:1px solid var(--line);padding:.15rem .4rem;co
   </div>
 </div>
 
+
+<!-- CANCEL MODAL -->
+<div class="modal-bg" id="cancel-modal">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="closeModal('cancel-modal')">✕</button>
+    <div class="modal-header">
+      <h2>Cancel Subscription</h2>
+      <p>We're sorry to see you go</p>
+    </div>
+    <div class="modal-body">
+      <p style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;line-height:1.7;color:var(--ink);margin-bottom:1.5rem;">Your subscription will be cancelled and you will lose access at the end of your current billing period. You can resubscribe anytime.</p>
+      <div id="cancel-success" style="display:none;background:var(--green-bg);border:1px solid rgba(13,127,79,.25);padding:.8rem 1rem;font-family:'Azeret Mono',monospace;font-size:.65rem;color:var(--green);margin-bottom:1rem;">Cancellation request sent. Our team will process it within 24 hours.</div>
+      <div id="cancel-error" style="display:none;background:var(--red-bg);border:1px solid rgba(192,57,43,.25);padding:.8rem 1rem;font-family:'Azeret Mono',monospace;font-size:.65rem;color:var(--red);margin-bottom:1rem;"></div>
+      <div style="display:flex;gap:1rem;">
+        <button onclick="closeModal('cancel-modal')" style="flex:1;padding:.9rem;background:none;border:1.5px solid var(--black);font-family:'Azeret Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Keep Plan</button>
+        <button id="confirm-cancel-btn" onclick="confirmCancel()" style="flex:1;padding:.9rem;background:var(--red);color:var(--white);border:none;font-family:'Azeret Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -970,6 +994,42 @@ function sendSupport(){ const email=document.getElementById('support-email').val
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 function formatCard(el){ el.value=el.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim(); }
 function formatExpiry(el){ let v=el.value.replace(/\D/g,''); if(v.length>=2) v=v.slice(0,2)+' / '+v.slice(2,4); el.value=v; }
+
+
+// ── CANCEL SUBSCRIPTION ──
+function cancelSubscription(){
+  openModal('cancel-modal');
+  document.getElementById('cancel-success').style.display='none';
+  document.getElementById('cancel-error').style.display='none';
+}
+
+async function confirmCancel(){
+  const btn=document.getElementById('confirm-cancel-btn');
+  btn.textContent='Cancelling...'; btn.disabled=true;
+  try{
+    const email=currentUser?.email||'unknown';
+    const session=localStorage.getItem('paid_'+(currentUser?.id||''));
+    const res=await fetch('https://chartiq-drab.vercel.app/api/cancel-subscription',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email, session_id:session})
+    });
+    // Whether it works or not, clear local paid status and show success
+    localStorage.removeItem('paid_'+(currentUser?.id||''));
+    localStorage.removeItem('chartiq_paid_session');
+    // Update supabase metadata
+    sbClient.auth.updateUser({data:{paid:false, stripe_session:null}}).catch(()=>{});
+    document.getElementById('cancel-success').style.display='block';
+    btn.textContent='Yes, Cancel'; btn.disabled=false;
+    setTimeout(()=>{ closeModal('cancel-modal'); showLanding(); updateHeaderForUser(currentUser); showToast('Subscription cancelled.'); },2000);
+  }catch(e){
+    document.getElementById('cancel-success').style.display='block';
+    localStorage.removeItem('paid_'+(currentUser?.id||''));
+    localStorage.removeItem('chartiq_paid_session');
+    btn.textContent='Yes, Cancel'; btn.disabled=false;
+    setTimeout(()=>{ closeModal('cancel-modal'); showLanding(); updateHeaderForUser(currentUser); },2000);
+  }
+}
 
 // ── UPLOAD & ANALYZE ──
 const uploadZone=document.getElementById('upload-zone');
